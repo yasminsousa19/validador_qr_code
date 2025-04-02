@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Validador de QR Code</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jsQR/1.4.0/jsQR.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            background: linear-gradient(to right, #8e44ad, #e91e63);
+            color: white;
+            padding: 20px;
+        }
+        .container {
+            background: white;
+            color: black;
+            max-width: 400px;
+            margin: auto;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.2);
+        }
+        video {
+            width: 100%;
+            border-radius: 10px;
+        }
+        #result {
+            font-size: 18px;
+            margin-top: 20px;
+        }
+        .valid {
+            color: green;
+            font-weight: bold;
+        }
+        .invalid {
+            color: red;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Validador de QR Code 🎂</h1>
+        <video id="video" autoplay></video>
+        <p id="result">Escaneie um QR Code...</p>
+    </div>
+
+    <script>
+        const video = document.getElementById("video");
+        const resultText = document.getElementById("result");
+
+        navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } })
+            .then(stream => { video.srcObject = stream; });
+
+        function scanQRCode() {
+            const canvas = document.createElement("canvas");
+            const context = canvas.getContext("2d");
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            context.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+            const imageData = context.getImageData(0, 0, canvas.width, canvas.height);
+            const qrCode = jsQR(imageData.data, imageData.width, imageData.height);
+
+            if (qrCode) {
+                validateQRCode(qrCode.data);
+            }
+        }
+
+        function validateQRCode(qrData) {
+            const match = qrData.match(/Nome: (.*), Aniv: (\d{2}\/\d{2}\/\d{4})/);
+            if (!match) {
+                resultText.innerHTML = "<span class='invalid'>QR Code inválido!</span>";
+                return;
+            }
+
+            const name = match[1];
+            const birthdate = match[2];
+            const today = new Date().toLocaleDateString("pt-BR");
+
+            if (birthdate === today) {
+                resultText.innerHTML = `<span class='valid'>🎉 Válido para ${name}! Parabéns! 🎂</span>`;
+            } else {
+                resultText.innerHTML = `<span class='invalid'>⛔ QR Code inválido. Não é o aniversário de ${name} hoje.</span>`;
+            }
+        }
+
+        setInterval(scanQRCode, 1000);
+    </script>
+</body>
+</html>
